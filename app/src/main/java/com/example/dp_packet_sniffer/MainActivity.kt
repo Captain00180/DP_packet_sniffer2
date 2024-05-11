@@ -22,7 +22,6 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.get
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -33,8 +32,6 @@ import com.example.dp_packet_sniffer.R
 import com.example.dp_packet_sniffer.databinding.ActivityMainBinding
 import com.example.hexene.localvpn.LocalVPNService
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 data class AppInfoCheckbox(
     val applicationInfo: ApplicationInfo,
@@ -83,7 +80,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var statsViewModel: StatsViewModel
 
-    private lateinit var packetData: ArrayList<LocalVPNService.PacketInfo>
+    lateinit var packetData: ArrayList<LocalVPNService.PacketInfo>
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {

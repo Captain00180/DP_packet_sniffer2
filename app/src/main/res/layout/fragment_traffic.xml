@@ -8,274 +8,78 @@
     tools:context="com.dp_packet_sniffer.ui.traffic.TrafficFragment"
     >
 
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="204dp"
+        android:layout_height="65dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="Packet Traffic"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <TextView
+        android:id="@+id/textSort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="Sort data by:"
+        android:textSize="15sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/buttonSortByTime"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="@drawable/rounded_box"
+            android:layout_weight="1"
+            android:text="Time"
+            android:textSize="10sp"
+            android:layout_marginEnd="4dp"/>
 
-            >
+        <Button
+            android:id="@+id/buttonSortByProtocol"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:text="Protocol"
+            android:textSize="10sp" />
 
-            <ImageView
-                android:id="@+id/appIcon1"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:contentDescription="Icon"
-                android:src="@drawable/ic_launcher_foreground" />
+        <Button
+            android:id="@+id/buttonSortByIP"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="IP"
+            android:textSize="10sp"
+            android:layout_marginEnd="4dp"/>
 
-            <TextView
-                android:id="@+id/packetData1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="italic"
-                android:text="Timestamp\nApp Name\nHTTP Method\nDestination IP\nPayload Size" />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="@null" />
-
+        <Button
+            android:id="@+id/buttonSortBySize"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Size"
+            android:textSize="10sp"/>
     </LinearLayout>
 
-    <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+
+
+
+    <ListView
+        android:id="@+id/trafficListView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="@drawable/rounded_box"
-
-            >
-
-            <ImageView
-                android:id="@+id/appIcon2"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:contentDescription="Icon"
-                android:src="@drawable/ic_launcher_foreground" />
-
-            <TextView
-                android:id="@+id/packetData2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                                android:textStyle="italic"
-                android:text="Timestamp\nApp Name\nHTTP Method\nDestination IP\nPayload Size" 
-                />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="@null" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="@drawable/rounded_box"
-
-            >
-
-            <ImageView
-                android:id="@+id/appIcon3"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:contentDescription="Icon"
-                android:src="@drawable/ic_launcher_foreground" />
-
-            <TextView
-                android:id="@+id/packetData3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                                android:textStyle="italic"
-                android:text="Timestamp\nApp Name\nHTTP Method\nDestination IP\nPayload Size" 
-                />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="@null" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="@drawable/rounded_box"
-
-            >
-
-            <ImageView
-                android:id="@+id/appIcon4"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:contentDescription="Icon"
-                android:src="@drawable/ic_launcher_foreground" />
-
-            <TextView
-                android:id="@+id/packetData4"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                                android:textStyle="italic"
-                android:text="Timestamp\nApp Name\nHTTP Method\nDestination IP\nPayload Size" 
-                />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="@null" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="@drawable/rounded_box"
-
-            >
-
-            <ImageView
-                android:id="@+id/appIcon5"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:contentDescription="Icon"
-                android:src="@drawable/ic_launcher_foreground" />
-
-            <TextView
-                android:id="@+id/packetData5"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                                android:textStyle="italic"
-                android:text="Timestamp\nApp Name\nHTTP Method\nDestination IP\nPayload Size" 
-                />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="@null" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="@drawable/rounded_box"
-
-            >
-
-            <ImageView
-                android:id="@+id/appIcon6"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:contentDescription="Icon"
-                android:src="@drawable/ic_launcher_foreground" />
-
-            <TextView
-                android:id="@+id/packetData6"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                                android:textStyle="italic"
-                android:text="Timestamp\nApp Name\nHTTP Method\nDestination IP\nPayload Size" 
-                />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:background="@null" />
-
-    </LinearLayout>
-
-
-
+        android:layout_height="match_parent" />
 </LinearLayout>

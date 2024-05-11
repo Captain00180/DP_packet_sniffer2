@@ -1,45 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
-
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:background="@drawable/rounded_box"
+        android:background="@drawable/rounded_box">
 
-        >
-
-        <ImageView
-            android:id="@+id/appIcon"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:contentDescription="Icon"
-            tools:srcCompat="@tools:sample/avatars" />
-
-        <TextView
-            android:id="@+id/packetData"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
             android:layout_weight="1"
-            android:textSize="18sp"
-            android:textColor="@color/black"
-            tools:text="@tools:sample/full_names"
-            />
+            android:orientation="vertical"
+            android:layout_marginStart="16dp">
 
+            <TextView
+                android:id="@+id/timestampTextView"
+                android:layout_width="231dp"
+                android:layout_height="wrap_content"
+                android:text="Timestamp"
+                android:textSize="16sp"
+                android:textStyle="italic" />
+
+            <TextView
+                android:id="@+id/protocolTextView"
+                android:layout_width="232dp"
+                android:layout_height="wrap_content"
+                android:text="Protocol"
+                android:textSize="16sp"
+                android:textStyle="italic" />
+
+            <TextView
+                android:id="@+id/destinationIpTextView"
+                android:layout_width="235dp"
+                android:layout_height="wrap_content"
+                android:text="Destination IP"
+                android:textSize="16sp"
+                android:textStyle="italic" />
+
+            <TextView
+                android:id="@+id/payloadSizeTextView"
+                android:layout_width="234dp"
+                android:layout_height="wrap_content"
+                android:text="Payload Size"
+                android:textSize="16sp"
+                android:textStyle="italic" />
+
+        </LinearLayout>
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="8dp"
         android:background="@null" />
-
 </LinearLayout>

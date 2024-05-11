@@ -1,19 +1,25 @@
 package com.dp_packet_sniffer.ui.traffic
 
+import android.R.attr.button
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ListView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import com.dp_packet_sniffer.MainActivity
 import com.example.dp_packet_sniffer.databinding.FragmentTrafficBinding
+import com.example.dp_packet_sniffer.ui.traffic.PacketListAdapter
+
 
 class TrafficFragment : Fragment() {
 
     private var _binding: FragmentTrafficBinding? = null
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
+    private lateinit var packetListAdapter: PacketListAdapter
+    private lateinit var listView: ListView
+
+
     private val binding get() = _binding!!
 
     override fun onCreateView(
@@ -21,17 +27,63 @@ class TrafficFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val trafficViewModel =
-            ViewModelProvider(this).get(TrafficViewModel::class.java)
 
         _binding = FragmentTrafficBinding.inflate(inflater, container, false)
         val root: View = binding.root
+        listView = binding.trafficListView
+
+
+        binding.buttonSortByTime.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                val packetData = (activity as MainActivity).packetData
+                packetData.sortBy { it.timestamp }
+                listView.adapter = PacketListAdapter(requireContext(), packetData)
+            }
+        })
+
+        binding.buttonSortByProtocol.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                val packetData = (activity as MainActivity).packetData
+                packetData.sortBy { it.protocol }
+                listView.adapter = PacketListAdapter(requireContext(), packetData)
+            }
+        })
+
+        binding.buttonSortByIP.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                val packetData = (activity as MainActivity).packetData
+                packetData.sortBy { it.destinationIP }
+                listView.adapter = PacketListAdapter(requireContext(), packetData)
+            }
+        })
+        binding.buttonSortBySize.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                val packetData = (activity as MainActivity).packetData
+                packetData.sortBy { it.payloadSize }
+                listView.adapter = PacketListAdapter(requireContext(), packetData)
+            }
+        })
 
         return root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val packetData = (activity as MainActivity).packetData
+        packetData.sortBy { it.timestamp }
+        listView.adapter = PacketListAdapter(requireContext(), packetData)
+
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
+    fun sortData(view: View)
+    {
+
+    }
 }
+
