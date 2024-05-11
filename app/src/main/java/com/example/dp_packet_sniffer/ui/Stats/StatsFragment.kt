@@ -1,11 +1,14 @@
 package com.dp_packet_sniffer.ui.Stats
 
 import IPCountryListAdapter
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -53,7 +56,7 @@ class StatsFragment : Fragment() {
     private fun updatePieChart(newData: List<PieEntry>)
     {
         val pieChart = requireView().findViewById<PieChart>(R.id.pieChart)
-        val dataset = PieDataSet(newData, "Protocol used")
+        val dataset = PieDataSet(newData, "")
         val colors = ArrayList<Int>()
         colors.add(Color.parseColor("#304567"))
         colors.add(Color.parseColor("#309967"))
@@ -66,6 +69,8 @@ class StatsFragment : Fragment() {
         val data = PieData(dataset)
         data.setValueTextSize(12f);
         pieChart.data = data
+        pieChart.description.isEnabled = false
+        pieChart.legend.isEnabled = false
         pieChart.invalidate()
     }
 
@@ -92,8 +97,8 @@ class StatsFragment : Fragment() {
             binding.ipListView.adapter = ipCountryListAdapter
             ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.second })
         })
-
-
     }
+
+
 
 }

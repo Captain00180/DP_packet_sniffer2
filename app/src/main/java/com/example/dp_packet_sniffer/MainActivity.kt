@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
@@ -17,6 +18,7 @@ import android.util.Log
 import android.view.View
 import android.widget.CheckBox
 import android.widget.ListView
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -200,5 +202,15 @@ class MainActivity : AppCompatActivity() {
         statsViewModel.updateIPList(packetData)
     }
 
+
+    fun onListItemClick(view: View) {
+        val ipTextView = view.findViewById<TextView>(R.id.ipTextView)
+        val ipAddress = ipTextView.text.toString()
+
+        val link = "https://whatismyipaddress.com/ip/$ipAddress"
+
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+        startActivity(intent)
+    }
 
 }
