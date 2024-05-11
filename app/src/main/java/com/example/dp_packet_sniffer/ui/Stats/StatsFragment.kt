@@ -88,9 +88,9 @@ class StatsFragment : Fragment() {
 
         sharedViewModel.ipCountryMap.observe(viewLifecycleOwner, Observer { map ->
             // Update the adapter data with the new map values
-            ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList())
+            ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList().sortedByDescending { it.second.second })
             binding.ipListView.adapter = ipCountryListAdapter
-            ipCountryListAdapter.updateData(map.toList())
+            ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.second })
         })
 
 
