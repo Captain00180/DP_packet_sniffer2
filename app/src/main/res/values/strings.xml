@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DP_packet_sniffer</string>
+    <string name="title_home">Home</string>
+    <string name="title_stats">Stats</string>
+    <string name="title_traffic">Traffic</string>
+    <string name="start_scan">Start scan</string>
+    <string name="scan_in_progress">Scan in progress</string>
+</resources>

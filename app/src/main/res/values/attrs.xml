@@ -1,0 +1,6 @@
+<resources>
+    <declare-styleable name="IncludedLayout">
+        <attr name="textAttribute" format="string" />
+        <attr name="imageAttribute" format="reference" />
+    </declare-styleable>
+</resources>
