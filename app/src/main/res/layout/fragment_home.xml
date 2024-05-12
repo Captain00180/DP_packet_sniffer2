@@ -19,7 +19,8 @@
             android:id="@+id/textView"
             android:layout_width="180dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="44dp"
+            android:layout_marginTop="45dp"
+            android:layout_marginBottom="15dp"
             android:text="@string/start_scan"
             android:textAlignment="center"
             android:textSize="25sp"
@@ -29,8 +30,8 @@
 
         <ImageButton
             android:id="@+id/imageButton3"
-            android:layout_width="180dp"
-            android:layout_height="180dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             android:background="@drawable/circle"
             android:onClick="startScan"
             android:padding="35dp"

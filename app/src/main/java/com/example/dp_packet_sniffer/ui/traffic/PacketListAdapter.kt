@@ -35,7 +35,7 @@ class PacketListAdapter(context: Context, private var items: List<PacketInfo>) :
         // Destination IP
         itemView?.findViewById<TextView>(R.id.destinationIpTextView)?.text = "IP: " + currentItem.destinationIP.substring(1)
         // Payload Size
-        itemView?.findViewById<TextView>(R.id.payloadSizeTextView)?.text = "Payload Size:" + currentItem.payloadSize.toString()
+        itemView?.findViewById<TextView>(R.id.payloadSizeTextView)?.text = "Payload Size: " + currentItem.payloadSize.toString() + "B"
 
         return itemView!!
     }
