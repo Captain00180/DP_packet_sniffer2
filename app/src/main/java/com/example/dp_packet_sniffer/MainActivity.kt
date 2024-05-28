@@ -21,6 +21,7 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
@@ -66,9 +67,7 @@ class MainActivity : AppCompatActivity() {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            // Cast the IBinder to LocalVPNService.LocalBinder
             val binder = service as LocalVPNService.LocalBinder
-            // Get the LocalVPNService instance from the binder
             vpnService = binder.service
             vpnServiceBound = true
         }
@@ -87,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         setContentView(binding.root)
 
         val navView: BottomNavigationView = binding.navView
@@ -134,8 +134,6 @@ class MainActivity : AppCompatActivity() {
         for (info in infos) {
             allApps.add(AppInfoCheckbox(info, false))
         }
-
-
     }
 
     private fun startVPN() {

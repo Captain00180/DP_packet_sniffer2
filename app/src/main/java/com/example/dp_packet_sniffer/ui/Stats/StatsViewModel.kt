@@ -37,20 +37,17 @@ class StatsViewModel : ViewModel() {
     fun updatePieChart(newData: ArrayList<PacketInfo>)
     {
 
-        // Count occurrences of each protocol
         val protocolCounts = HashMap<String, Int>()
         for (packetInfo in newData) {
             val protocol = packetInfo.protocol
             protocolCounts[protocol] = protocolCounts.getOrDefault(protocol, 0) + 1
         }
 
-        // Convert protocol counts to PieEntries
         val entries = ArrayList<PieEntry>()
         for ((protocol, count) in protocolCounts) {
             entries.add(PieEntry(count.toFloat().roundToInt().toFloat(), protocol))
         }
 
-        // Create PieDataSet
         pieChartData.value = entries
 
     }
@@ -64,7 +61,6 @@ class StatsViewModel : ViewModel() {
                     val ipAddress = item.destinationIP.substring(1)
                     if (newMap.containsKey(ipAddress))
                     {
-                        // Increase count
                         val oldPair = newMap[ipAddress]
                         newMap[ipAddress] = Pair("NULL", oldPair?.second?.plus(1) ?: 1)
                     }

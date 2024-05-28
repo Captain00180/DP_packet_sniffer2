@@ -18,7 +18,6 @@ class AppListAdapter(context: Context, private var apps: List<AppInfoCheckbox>, 
 
 
         if (itemView == null) {
-            // Inflate the custom layout for each item
             itemView = LayoutInflater.from(context).inflate(R.layout.mylist, parent, false)
             viewHolder = ViewHolder(
                 itemView.findViewById(R.id.appIcon),
@@ -30,11 +29,9 @@ class AppListAdapter(context: Context, private var apps: List<AppInfoCheckbox>, 
             viewHolder = itemView.tag as ViewHolder
         }
 
-        // Get the ApplicationInfo object for this position
         val appInfoCheckbox = getItem(position)
         if (appInfoCheckbox != null)
         {
-            // Bind data to views
             viewHolder.appIcon.setImageDrawable(appInfoCheckbox.applicationInfo.loadIcon(packageManager))
             viewHolder.appName.text = appInfoCheckbox.applicationInfo.loadLabel(packageManager).toString()
             viewHolder.appCheckbox.setOnCheckedChangeListener(null)

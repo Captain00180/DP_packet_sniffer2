@@ -18,6 +18,7 @@ import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.formatter.DefaultValueFormatter
 
 
 class StatsFragment : Fragment() {
@@ -42,9 +43,10 @@ class StatsFragment : Fragment() {
         var pieChart = _binding!!.pieChart
 
         pieChart.isDrawHoleEnabled = true
-        pieChart.setUsePercentValues(true)
         pieChart.centerText = "Protocols used"
         pieChart.setCenterTextSize(24f)
+        pieChart.minAngleForSlices = 30f
+
 
         pieChart.invalidate();
 
@@ -57,6 +59,7 @@ class StatsFragment : Fragment() {
     {
         val pieChart = requireView().findViewById<PieChart>(R.id.pieChart)
         val dataset = PieDataSet(newData, "")
+        dataset.valueFormatter = DefaultValueFormatter(0)
         val colors = ArrayList<Int>()
         colors.add(Color.parseColor("#304567"))
         colors.add(Color.parseColor("#309967"))
@@ -82,17 +85,13 @@ class StatsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize the ViewModel
         val sharedViewModel = ViewModelProvider(requireActivity())[StatsViewModel::class.java]
 
-        // Observe changes to the pieChartData
         sharedViewModel.pieChartData.observe(viewLifecycleOwner, Observer { newData ->
-            // Update the pie chart with the new data
             updatePieChart(newData)
         })
 
         sharedViewModel.ipCountryMap.observe(viewLifecycleOwner, Observer { map ->
-            // Update the adapter data with the new map values
             ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList().sortedByDescending { it.second.second })
             binding.ipListView.adapter = ipCountryListAdapter
             ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.second })

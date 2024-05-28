@@ -117,7 +117,7 @@ public class LocalVPNService extends VpnService
             builder.addAddress(VPN_ADDRESS, 32);
             builder.addRoute(VPN_ROUTE, 0);
             try {
-            builder.addAllowedApplication(null);
+            builder.addAllowedApplication(getPackageName());
             } catch(PackageManager.NameNotFoundException ignore)
             {
             }
