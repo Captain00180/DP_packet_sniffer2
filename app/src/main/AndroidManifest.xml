@@ -25,7 +25,7 @@
         </activity>
 
         <service
-            android:name="com.example.hexene.localvpn.LocalVPNService"
+            android:name="com.dp_project.hexene.localvpn.LocalVPNService"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_VPN_SERVICE">

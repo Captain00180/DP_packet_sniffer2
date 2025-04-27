@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.example.dp_packet_sniffer"
+    namespace = "com.dp_project.dp_packet_sniffer"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.dp_packet_sniffer"
-        minSdk = 24
+        applicationId = "com.dp_project.dp_packet_sniffer"
+        minSdk = 30
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
