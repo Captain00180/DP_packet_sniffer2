@@ -31,6 +31,13 @@ class TrafficFragment : Fragment() {
         val root: View = binding.root
         listView = binding.trafficListView
 
+        binding.buttonSortByApp.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                val packetData = (activity as MainActivity).packetData
+                packetData.sortBy { it.applicationInfo?.name ?: "zzzzzzzzzz" }
+                listView.adapter = PacketListAdapter(requireContext(), packetData)
+            }
+        })
 
         binding.buttonSortByTime.setOnClickListener(object : View.OnClickListener {
             override fun onClick(v: View?) {
