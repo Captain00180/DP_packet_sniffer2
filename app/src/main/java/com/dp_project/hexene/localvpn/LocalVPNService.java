@@ -17,11 +17,19 @@
 package com.dp_project.hexene.localvpn;
 
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.VpnService;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
+
+import android.content.pm.ApplicationInfo;
+import android.net.ConnectivityManager;
+import android.system.OsConstants;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+
 
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -76,13 +84,17 @@ public class LocalVPNService extends VpnService
         public String destinationIP;
         public int payloadSize;
 
-        public PacketInfo(Date timestamp, String protocol, String destinationIP, int payloadSize) {
+        public ApplicationInfo applicationInfo;
+
+        public PacketInfo(Date timestamp, String protocol, String destinationIP, int payloadSize, ApplicationInfo applicationInfo) {
             this.timestamp = timestamp;
             this.protocol = protocol;
             this.destinationIP = destinationIP;
             this.payloadSize = payloadSize;
+            this.applicationInfo = applicationInfo;
         }
     }
+
 
     public class LocalBinder extends Binder {
         public LocalVPNService getService() {
@@ -276,36 +288,56 @@ public class LocalVPNService extends VpnService
 
                     // TODO: Block when not connected
                     int readBytes = vpnInput.read(bufferToNetwork);
-                    if (readBytes > 0)
-                    {
+                    if (readBytes > 0) {
                         dataSent = true;
                         bufferToNetwork.flip();
                         Packet packet = new Packet(bufferToNetwork);
+
                         Log.d("Packet sent!", String.valueOf(packet.ip4Header.destinationAddress));
+
                         // TODO Save packet info
-                        PacketInfo packetInfo = new PacketInfo(new Date(), protocol, packet.ip4Header.destinationAddress.toString(), packet.ip4Header.totalLength);
+                        String appName = "Unknown";
+                        String packageName = "Unknown";
+                        String destIP = null;
+                        ApplicationInfo appInfo = null;
+                        if (packet.isTCP() || packet.isUDP()) {
+                            destIP = packet.ip4Header.destinationAddress.toString();
+                            int destPort = packet.isTCP() ? packet.tcpHeader.destinationPort : packet.udpHeader.destinationPort;
 
+// Get UID of the connection owner
+                            int uid = getConnectionOwnerUid(packet, destIP, destPort);
 
-                        if (packet.isUDP())
-                        {
-                            if (packet.udpHeader != null)
-                            {
+// Get app info from UID
+
+                            if (uid != -1) {
+                                PackageManager pm = getInstance().getPackageManager();
+                                String[] packages = pm.getPackagesForUid(uid);
+                                if (packages != null && packages.length > 0) {
+                                    packageName = packages[0];
+                                    try {
+                                        appInfo = pm.getApplicationInfo(packageName, 0);
+                                    } catch (PackageManager.NameNotFoundException ignored) {
+                                    }
+                                }
+                            }
+
+// Now create the PacketInfo
+
+                        }
+                        PacketInfo packetInfo = new PacketInfo(new Date(), protocol, destIP, packet.ip4Header.totalLength, appInfo);
+                        if (packet.isUDP()) {
+                            if (packet.udpHeader != null) {
                                 packetInfo.protocol = getInstance().getProtocol(packet.udpHeader.destinationPort);
                                 getInstance().packetInfoMap.add(packetInfo);
                             }
                             deviceToNetworkUDPQueue.offer(packet);
-                        }
-                        else if (packet.isTCP())
-                        {
-                            if (packet.tcpHeader != null)
-                            {
+                        } else if (packet.isTCP()) {
+                            if (packet.tcpHeader != null) {
                                 packetInfo.protocol = getInstance().getProtocol(packet.tcpHeader.destinationPort);
                                 getInstance().packetInfoMap.add(packetInfo);
                             }
                             deviceToNetworkTCPQueue.offer(packet);
-                        }
-                        else
-                        {
+                        } else {
                             Log.w(TAG, "Unknown packet type");
                             Log.w(TAG, packet.ip4Header.toString());
                             dataSent = false;
@@ -342,15 +374,37 @@ public class LocalVPNService extends VpnService
             {
                 Log.i(TAG, "Stopping");
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 Log.w(TAG, e.toString(), e);
             }
             finally
             {
-                closeResources(vpnInput, vpnOutput);
+//                closeResources(vpnInput, vpnOutput);
             }
         }
+
+        private int getConnectionOwnerUid(Packet packet, String destIP, int destPort) {
+            try {
+                ConnectivityManager connectivityManager = (ConnectivityManager) getInstance().getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (connectivityManager == null) {
+                    return -1;
+                }
+
+                int protocol = packet.isTCP() ? OsConstants.IPPROTO_TCP : OsConstants.IPPROTO_UDP;
+
+                // Create local and remote socket addresses
+                InetSocketAddress local = new InetSocketAddress(packet.ip4Header.sourceAddress.getHostAddress(), packet.isTCP() ? packet.tcpHeader.sourcePort : packet.udpHeader.sourcePort);
+                InetSocketAddress remote = new InetSocketAddress(packet.ip4Header.destinationAddress.getHostAddress(), destPort);
+
+                return connectivityManager.getConnectionOwnerUid(protocol, local, remote);
+            } catch (Exception e) {
+                Log.e(TAG, "getConnectionOwnerUid failed", e);
+                return -1;
+            }
+        }
+
+
     }
 
     private String getProtocol(int port)

@@ -1,5 +1,6 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -7,16 +8,17 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/rounded_box"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="@drawable/rounded_box">
+        android:padding="16dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:id="@+id/linearLayout2"
+            android:layout_width="309dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="16dp">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/timestampTextView"
@@ -24,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:text="Timestamp"
                 android:textSize="16sp"
-                android:textStyle="italic" />
+                android:textStyle="bold|italic" />
 
             <TextView
                 android:id="@+id/protocolTextView"
@@ -32,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:text="Protocol"
                 android:textSize="16sp"
-                android:textStyle="italic" />
+                android:textStyle="bold|italic" />
 
             <TextView
                 android:id="@+id/destinationIpTextView"
@@ -40,17 +42,66 @@
                 android:layout_height="wrap_content"
                 android:text="Destination IP"
                 android:textSize="16sp"
-                android:textStyle="italic" />
+                android:textStyle="bold|italic" />
 
             <TextView
                 android:id="@+id/payloadSizeTextView"
-                android:layout_width="234dp"
+                android:layout_width="198dp"
                 android:layout_height="wrap_content"
                 android:text="Payload Size"
                 android:textSize="16sp"
-                android:textStyle="italic" />
+                android:textStyle="bold|italic" />
 
         </LinearLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/linearLayout"
+            android:layout_width="138dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/linearLayout2"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.5"
+            tools:layout_editor_absoluteX="272dp"
+            tools:layout_editor_absoluteY="16dp">
+
+            <!-- ImageView -->
+            <ImageView
+                android:id="@+id/appIcon"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="7dp"
+                android:contentDescription="Icon"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_launcher_foreground"
+                tools:srcCompat="@tools:sample/avatars" />
+
+            <TextView
+                android:id="@+id/appName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:autoSizeMaxTextSize="24sp"
+                android:autoSizeMinTextSize="12sp"
+                android:autoSizeStepGranularity="2sp"
+                android:autoSizeTextType="uniform"
+                android:gravity="center"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/appIcon"
+                tools:text="Google play services" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
     </LinearLayout>
 
     <View

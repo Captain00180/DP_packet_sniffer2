@@ -126,7 +126,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getallapps(view: View?, listView: ListView) {
         val infos = packageManager.getInstalledApplications(PackageManager.GET_META_DATA).filter { info ->
             info.category != ApplicationInfo.CATEGORY_UNDEFINED }
