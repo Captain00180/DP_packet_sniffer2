@@ -1,6 +1,6 @@
 package com.dp_packet_sniffer.ui.Stats
 
-import IPCountryListAdapter
+import com.dp_project.dp_packet_sniffer.ui.Stats.IPCountryListAdapter
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -89,11 +89,13 @@ class StatsFragment : Fragment() {
         })
 
         sharedViewModel.ipCountryMap.observe(viewLifecycleOwner, Observer { map ->
-            ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList().sortedByDescending { it.second.second })
+            ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList().sortedByDescending { it.second.count })
             binding.ipListView.adapter = ipCountryListAdapter
-            ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.second })
+            ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.count })
         })
     }
+
+
 
 
 

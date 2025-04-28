@@ -20,7 +20,16 @@ import kotlin.math.roundToInt
 
 class StatsViewModel : ViewModel() {
 
-    val ipCountryMap: MutableLiveData<Map<String, Pair<String, Int>>> = MutableLiveData()
+
+    data class IpInfoData(
+        val topApp: String,
+        val topProtocol: String,
+        val count: Int,
+        val country: String = "Unknown"
+    )
+
+
+    val ipCountryMap: MutableLiveData<Map<String, IpInfoData>> = MutableLiveData()
 
     val pieChartData = MutableLiveData<List<PieEntry>>()
 
@@ -51,32 +60,48 @@ class StatsViewModel : ViewModel() {
 
     }
 
-    fun updateIPList(newdata: ArrayList<PacketInfo>)
-    {
+    fun updateIPList(newdata: ArrayList<PacketInfo>) {
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                val newMap = mutableMapOf<String, Pair<String, Int>>()
+                val ipAppCounts = mutableMapOf<String, MutableMap<String, Int>>()    // IP -> (AppName -> Count)
+                val ipProtocolCounts = mutableMapOf<String, MutableMap<String, Int>>() // IP -> (Protocol -> Count)
+                val ipTotalCounts = mutableMapOf<String, Int>()                        // IP -> Total packet count
+
                 for (item in newdata) {
                     val ipAddress = item.destinationIP.substring(1)
-                    if (newMap.containsKey(ipAddress))
-                    {
-                        val oldPair = newMap[ipAddress]
-                        newMap[ipAddress] = Pair("NULL", oldPair?.second?.plus(1) ?: 1)
-                    }
-                    else
-                    {
-                        newMap[ipAddress] = Pair("NULL", 1)
-                    }
+
+                    // Update total packet count
+                    ipTotalCounts[ipAddress] = (ipTotalCounts[ipAddress] ?: 0) + 1
+                    // Update App counts
+                    val appName = item.applicationInfo?.packageName ?: "Unknown"
+                    val appCountMap = ipAppCounts.getOrPut(ipAddress) { mutableMapOf() }
+                    appCountMap[appName] = (appCountMap[appName] ?: 0) + 1
+
+                    // Update Protocol counts
+                    val protocol = item.protocol ?: "Unknown Protocol"
+                    val protocolCountMap = ipProtocolCounts.getOrPut(ipAddress) { mutableMapOf() }
+                    protocolCountMap[protocol] = (protocolCountMap[protocol] ?: 0) + 1
                 }
-                ipCountryMap.postValue(newMap.toMutableMap())
+
+                // Build final map with IpInfoData
+                val finalMap = mutableMapOf<String, IpInfoData>()
+                for ((ip, count) in ipTotalCounts) {
+                    val topApp = ipAppCounts[ip]?.maxByOrNull { it.value }?.key ?: "Unknown"
+                    val topProtocol = ipProtocolCounts[ip]?.maxByOrNull { it.value }?.key ?: "Unknown"
+                    finalMap[ip] = IpInfoData(topApp, topProtocol, count)
+                }
+
+                ipCountryMap.postValue(finalMap)
+
                 val response = getGeoLocations(newdata)
                 parseResponse(response)
             } catch (e: Exception) {
                 Log.e("GeoLocation", "Error: ${e.message}")
             }
-            val x = 3
         }
     }
+
+
 
     private fun getGeoLocations(newdata: ArrayList<PacketInfo>): String {
         val url = URL("http://ip-api.com/batch")
@@ -113,28 +138,24 @@ class StatsViewModel : ViewModel() {
 
     private fun parseResponse(response: String) {
         val jsonArray = JSONArray(response)
-        val newMap = ipCountryMap.value!!.toMutableMap()
+        val currentMap = ipCountryMap.value?.toMutableMap() ?: return
+
         for (i in 0 until jsonArray.length()) {
             val jsonObject = jsonArray.getJSONObject(i)
             val ipAddress = jsonObject.optString("query", "")
             val country = jsonObject.optString("country", "")
+
             if (ipAddress.isNotEmpty() && country.isNotEmpty()) {
-//                if (newMap.containsKey(ipAddress))
-//                {
-//                    // Increase count
-//                    var oldPair = newMap[ipAddress]
-//                    newMap[ipAddress] = Pair(country, (oldPair?.second ?: 0) + 1)
-//                }
-//                else
-//                {
-//                    newMap[ipAddress] = Pair(country, 1)
-//                }
-                val oldCount = newMap[ipAddress]?.second
-                newMap[ipAddress] = Pair(country, oldCount!!)
+                val oldData = currentMap[ipAddress]
+                if (oldData != null) {
+                    // Update the country field, keep topApp, topProtocol, and count
+                    val updatedData = oldData.copy(country = country)
+                    currentMap[ipAddress] = updatedData
+                }
             }
         }
-        ipCountryMap.postValue(newMap.toMutableMap())
-        val x = 3
-        Log.d("Done", "Done")
+
+        ipCountryMap.postValue(currentMap)
     }
+
 }
