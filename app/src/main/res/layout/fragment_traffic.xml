@@ -88,5 +88,5 @@
     <ListView
         android:id="@+id/trafficListView"
         android:layout_width="match_parent"
-        android:layout_height="557dp" />
+        android:layout_height="516dp" />
 </LinearLayout>

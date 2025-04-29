@@ -7,6 +7,10 @@
         android:title="@string/title_home" />
 
     <item
+        android:id="@+id/navigation_risks"
+        android:icon="@android:drawable/stat_sys_warning"
+        android:title="Risks" />
+    <item
         android:id="@+id/navigation_stats"
         android:icon="@drawable/ic_dashboard_black_24dp"
         android:title="@string/title_stats" />

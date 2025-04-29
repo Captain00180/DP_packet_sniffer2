@@ -12,6 +12,12 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
+        android:id="@+id/navigation_risks"
+        android:name="com.dp_project.dp_packet_sniffer.ui.risks.RisksFragment"
+        android:label="Risks"
+        tools:layout="@layout/fragment_risks" />
+
+    <fragment
         android:id="@+id/navigation_stats"
         android:name="com.dp_packet_sniffer.ui.Stats.StatsFragment"
         android:label="@string/title_stats"

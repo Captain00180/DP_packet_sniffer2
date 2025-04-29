@@ -414,17 +414,38 @@ public class LocalVPNService extends VpnService
                 return "HTTP(80)";
             case 443:
                 return "HTTPS(443)";
-            case 25:
-                return "SMTP(25)";
             case 53:
                 return "DNS(53)";
-            case 22:
-                return "SSH(22)";
+            case 5228:
+                return "Google Services(5228)";
+            case 5229:
+                return "Google Services(5229)";
+            case 5230:
+                return "Google Services(5230)";
+            case 5222:
+                return "XMPP/Jabber(5222)";
             case 1883:
                 return "MQTT(1883)";
+            case 8883:
+                return "MQTTS(8883)";
+            case 8080:
+                return "HTTP-Alt(8080)";
+            case 8443:
+                return "HTTPS-Alt(8443)";
+            case 1900:
+                return "SSDP(1900)";
+            case 5353:
+                return "mDNS(5353)";
+            case 123:
+                return "NTP(123)";
+            case 500:
+                return "IKE/IPSec(500)";
+            case 4500:
+                return "NAT-T/IPSec(4500)";
             default:
-                return "Unknown";
+                return "Other";
         }
+
     }
 
 

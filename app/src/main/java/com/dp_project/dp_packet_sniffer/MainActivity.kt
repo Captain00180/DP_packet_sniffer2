@@ -1,6 +1,7 @@
 package com.dp_packet_sniffer
 
 import AppListAdapter
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -9,6 +10,8 @@ import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.net.VpnService
 import android.os.Build
@@ -25,6 +28,9 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.get
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
@@ -36,6 +42,7 @@ import com.dp_project.dp_packet_sniffer.R
 import com.dp_project.dp_packet_sniffer.databinding.ActivityMainBinding
 import com.dp_project.hexene.localvpn.LocalVPNService
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlin.math.log
 
 data class AppInfoCheckbox(
     val applicationInfo: ApplicationInfo,
@@ -83,8 +90,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsViewModel: StatsViewModel
 
     lateinit var packetData: ArrayList<LocalVPNService.PacketInfo>
+    var appWarnings: MutableMap<String, List<Boolean>> = mutableMapOf()
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -106,6 +113,13 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
+        //Disable navigations
+        for (i in 0 until navView.menu.size()) {
+            navView.menu.getItem(i).isEnabled = false
+            val disabledColor = Color.parseColor("#A0A0A0")
+            navView.itemIconTintList = ColorStateList.valueOf(disabledColor)
+            navView.itemTextColor = ColorStateList.valueOf(disabledColor)
+        }
 
         getallapps(null, listView)
 
@@ -127,6 +141,11 @@ class MainActivity : AppCompatActivity() {
             IntentFilter(LocalVPNService.BROADCAST_VPN_STATE)
         )
 
+        statsViewModel.ipCountryMap.observe(this) { updatedMap ->
+            // React to updates here
+            Log.d("IPCountryMap", "Updated map: $updatedMap")
+            onIpCountryMapUpdated(updatedMap)
+        }
     }
 
     fun getallapps(view: View?, listView: ListView) {
@@ -170,14 +189,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun startScan(view: View) {
-        println("Button clicked!")
         if(vpnIntent == null)
         {
+            ViewCompat.setBackgroundTintList(view, ColorStateList.valueOf(Color.parseColor("#FE2727")))
+            view.rootView.findViewById<TextView>(R.id.textView).text = "Stop scan"
             startVPN()
             LocalVPNService.setRunning(true)
         } else
         {
             // Stop scan
+            ViewCompat.setBackgroundTintList(view, ColorStateList.valueOf(Color.parseColor("#27FEB3")))
+            val activity = view.context as Activity
+
+            val textView = activity.findViewById<TextView>(R.id.textView)
+            val checkBox = activity.findViewById<CheckBox>(R.id.selectAllCheckbox)
+
+            textView.text = "Scan complete"
+
+            checkBox.visibility = View.GONE
+            view.visibility = View.GONE
+
+            // Re-enable navigation
+            val navView: BottomNavigationView = binding.navView
+
+            for (i in 1 until navView.menu.size()) {
+                val item = navView.menu.getItem(i)
+                item.isEnabled = true
+            }
+            val disabledColor = Color.parseColor("#4a4a4a")
+            navView.itemIconTintList = ColorStateList.valueOf(disabledColor)
+            navView.itemTextColor = ColorStateList.valueOf(disabledColor)
+
             Log.d("Service running", LocalVPNService.isRunning().toString())
             var ret = vpnService?.stopVPNService()
             if (ret != null) {
@@ -193,11 +235,88 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    fun analyzeData()
-    {
+    fun analyzeData() {
+        // Group packets by app package name
+        val packetsByApp = packetData
+            .filter { it.applicationInfo != null && it.applicationInfo.packageName != null }
+            .groupBy { it.applicationInfo.packageName!! }
+
+        // Map of app to total payload size
+        val appTraffic = packetsByApp.mapValues { (_, packets) ->
+            packets.sumOf { it.payloadSize }
+        }
+
+        // Sort apps by traffic
+        val sortedAppsByTraffic = appTraffic.entries.sortedByDescending { it.value }
+
+        // Detect if the top app has 3x more traffic than the second
+        val topApp = sortedAppsByTraffic.getOrNull(0)
+        val secondApp = sortedAppsByTraffic.getOrNull(1)
+        if (topApp != null && secondApp != null && topApp.value >= 3 * secondApp.value) {
+            Log.w("RiskAnalysis", "App ${topApp.key} has 3x more traffic than second top app")
+        }
+
+        // Analyze each app individually
+        for ((packageName, packets) in packetsByApp) {
+            var encryptionWarning = false
+            var protocolWarning = false
+            var countryWarning = false
+            val trafficWarning = topApp != null && secondApp != null && topApp.value >= 3 * secondApp.value && topApp.key == packageName
+
+            val total = packets.size
+            val unencryptedCount = packets.count { it.protocol == "HTTPS(443)" }
+            val otherProtocolCount = packets.count { it.protocol == "Other" }
+
+            val unencryptedRatio = unencryptedCount.toDouble() / total
+            val otherProtocolRatio = otherProtocolCount.toDouble() / total
+
+            if (unencryptedRatio > 0.5) {
+                encryptionWarning = true
+            }
+
+            if (otherProtocolRatio > 0.5) {
+                protocolWarning = true
+            }
+
+            appWarnings[packageName] = mutableListOf(encryptionWarning, protocolWarning, countryWarning, trafficWarning)
+        }
+
         statsViewModel.updatePieChart(packetData)
         statsViewModel.updateIPList(packetData)
+
+        val geoMap = statsViewModel.ipCountryMap
+        Log.d("Debug", geoMap.value.toString())
+
     }
+
+    private fun onIpCountryMapUpdated(updatedMap: Map<String, StatsViewModel.IpInfoData>) {
+        if (!::packetData.isInitialized) {
+            return
+        }
+        val highRiskCountries =
+            listOf("Russia", "North Korea", "Ukraine", "China", "Nigeria", "Romania", "India")
+
+        // Group packets by app package name
+        val packetsByApp = packetData
+            .filter { it.applicationInfo != null && it.applicationInfo.packageName != null }
+            .groupBy { it.applicationInfo.packageName!! }
+
+        for ((packageName, packets) in packetsByApp) {
+
+            for (packet in packets) {
+                val ip = packet.destinationIP.removePrefix("/")
+                val country = updatedMap[ip]?.country ?: continue
+                if (country in highRiskCountries) {
+                    appWarnings[packageName]?.let { warnings ->
+                        val updatedWarnings = warnings.toMutableList()
+                        updatedWarnings[updatedWarnings.lastIndex] = true
+                        appWarnings[packageName] = updatedWarnings
+                    }
+                }
+            }
+        }
+    }
+
 
 
     fun onListItemClick(view: View) {

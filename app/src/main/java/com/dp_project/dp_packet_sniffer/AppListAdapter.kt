@@ -10,7 +10,7 @@ import android.widget.TextView
 import com.dp_packet_sniffer.AppInfoCheckbox
 import com.dp_project.dp_packet_sniffer.R
 class AppListAdapter(context: Context, private var apps: List<AppInfoCheckbox>, private val packageManager: PackageManager) :
-    ArrayAdapter<AppInfoCheckbox>(context, R.layout.mylist, apps) {
+    ArrayAdapter<AppInfoCheckbox>(context, R.layout.app_list_checkbox_item, apps) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         var itemView = convertView
@@ -18,7 +18,7 @@ class AppListAdapter(context: Context, private var apps: List<AppInfoCheckbox>, 
 
 
         if (itemView == null) {
-            itemView = LayoutInflater.from(context).inflate(R.layout.mylist, parent, false)
+            itemView = LayoutInflater.from(context).inflate(R.layout.app_list_checkbox_item, parent, false)
             viewHolder = ViewHolder(
                 itemView.findViewById(R.id.appIcon),
                 itemView.findViewById(R.id.appName),

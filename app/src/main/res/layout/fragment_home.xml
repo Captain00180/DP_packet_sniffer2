@@ -15,24 +15,14 @@
         android:orientation="vertical"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="45dp"
-            android:layout_marginBottom="15dp"
-            android:text="@string/start_scan"
-            android:textAlignment="center"
-            android:textSize="25sp"
-            app:layout_constraintBottom_toTopOf="@+id/imageButton3"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
         <ImageButton
             android:id="@+id/imageButton3"
             android:layout_width="150dp"
             android:layout_height="150dp"
+            android:layout_marginTop="45dp"
             android:background="@drawable/circle"
+
+            android:backgroundTint="#27FEB3"
             android:onClick="startScan"
             android:padding="35dp"
             android:scaleType="fitCenter"
@@ -42,6 +32,19 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.325" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="15dp"
+            android:text="@string/start_scan"
+            android:textAlignment="center"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/imageButton3"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <CheckBox
             android:id="@+id/selectAllCheckbox"
@@ -55,7 +58,7 @@
         <ListView
             android:id="@+id/applist"
             android:layout_width="match_parent"
-            android:layout_height="397dp"
+            android:layout_height="357dp"
             android:divider="@android:color/transparent"
             android:dividerHeight="10.0sp" />
 
