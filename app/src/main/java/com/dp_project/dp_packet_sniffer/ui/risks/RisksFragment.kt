@@ -38,7 +38,6 @@ class RisksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.e("VIEW CREATED", "VIEW CREATED HERE")
         val appWarnings = (activity as MainActivity).appWarnings
         listView.adapter = AppRiskListAdapter(requireContext(), appWarnings.entries.toList())
 

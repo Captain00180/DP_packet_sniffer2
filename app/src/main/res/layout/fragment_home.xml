@@ -23,7 +23,7 @@
             android:background="@drawable/circle"
 
             android:backgroundTint="#27FEB3"
-            android:onClick="startScan"
+            android:onClick="toggleScan"
             android:padding="35dp"
             android:scaleType="fitCenter"
             android:src="@drawable/loupe_search_svgrepo_com"

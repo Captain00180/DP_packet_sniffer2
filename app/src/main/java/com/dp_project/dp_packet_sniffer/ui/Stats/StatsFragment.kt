@@ -36,14 +36,13 @@ class StatsFragment : Fragment() {
 
         _binding = FragmentStatsBinding.inflate(inflater, container, false)
 
-
         var pieChart = _binding!!.pieChart
 
+        // Initialize PieChart settings
         pieChart.isDrawHoleEnabled = true
         pieChart.centerText = "Protocols used"
         pieChart.setCenterTextSize(24f)
         pieChart.minAngleForSlices = 30f
-
 
         pieChart.invalidate();
 
@@ -52,6 +51,10 @@ class StatsFragment : Fragment() {
         return root
     }
 
+    /**
+     * Create a pie chart of used protocols and their counts
+     * newData - processed PieEntry list
+     */
     private fun updatePieChart(newData: List<PieEntry>)
     {
         val pieChart = requireView().findViewById<PieChart>(R.id.pieChart)
@@ -84,19 +87,17 @@ class StatsFragment : Fragment() {
 
         val sharedViewModel = ViewModelProvider(requireActivity())[StatsViewModel::class.java]
 
+        // Update the pieChart when ViewModel data changes
         sharedViewModel.pieChartData.observe(viewLifecycleOwner, Observer { newData ->
             updatePieChart(newData)
         })
 
+        // Update the IP list when ViewModel data changes
         sharedViewModel.ipCountryMap.observe(viewLifecycleOwner, Observer { map ->
             ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList().sortedByDescending { it.second.count })
             binding.ipListView.adapter = ipCountryListAdapter
             ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.count })
         })
     }
-
-
-
-
 
 }

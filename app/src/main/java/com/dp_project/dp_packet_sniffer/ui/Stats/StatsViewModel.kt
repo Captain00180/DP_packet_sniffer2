@@ -21,6 +21,9 @@ import kotlin.math.roundToInt
 class StatsViewModel : ViewModel() {
 
 
+    /**
+     * Holds information about an IP address
+     */
     data class IpInfoData(
         val topApp: String,
         val topProtocol: String,
@@ -28,9 +31,10 @@ class StatsViewModel : ViewModel() {
         val country: String = "Unknown"
     )
 
-
+    // Map of <IpAddress> - <IpInfo>
     val ipCountryMap: MutableLiveData<Map<String, IpInfoData>> = MutableLiveData()
 
+    // List of PieEntries ready to be displayed
     val pieChartData = MutableLiveData<List<PieEntry>>()
 
     private val _text = MutableLiveData<String>().apply {
@@ -42,15 +46,19 @@ class StatsViewModel : ViewModel() {
         ipCountryMap.value = mutableMapOf()
     }
 
+    /**
+     * Process packet data after scanning is completed and prepare the pieEntry entities
+     */
     fun updatePieChart(newData: ArrayList<PacketInfo>)
     {
-
         val protocolCounts = HashMap<String, Int>()
         for (packetInfo in newData) {
             val protocol = packetInfo.protocol
+            // Counts protocols
             protocolCounts[protocol] = protocolCounts.getOrDefault(protocol, 0) + 1
         }
 
+        // Prepares the entries for pie chart
         val entries = ArrayList<PieEntry>()
         for ((protocol, count) in protocolCounts) {
             entries.add(PieEntry(count.toFloat().roundToInt().toFloat(), protocol))
@@ -60,6 +68,9 @@ class StatsViewModel : ViewModel() {
 
     }
 
+    /**
+     * Process the packet data into information about IP addresses
+     */
     fun updateIPList(newdata: ArrayList<PacketInfo>) {
         GlobalScope.launch(Dispatchers.IO) {
             try {
@@ -78,7 +89,7 @@ class StatsViewModel : ViewModel() {
                     appCountMap[appName] = (appCountMap[appName] ?: 0) + 1
 
                     // Update Protocol counts
-                    val protocol = item.protocol ?: "Unknown Protocol"
+                    val protocol = item.protocol ?: "Unknown"
                     val protocolCountMap = ipProtocolCounts.getOrPut(ipAddress) { mutableMapOf() }
                     protocolCountMap[protocol] = (protocolCountMap[protocol] ?: 0) + 1
                 }
@@ -91,8 +102,10 @@ class StatsViewModel : ViewModel() {
                     finalMap[ip] = IpInfoData(topApp, topProtocol, count)
                 }
 
+                // Send update
                 ipCountryMap.postValue(finalMap)
 
+                // Fetch geolocation info
                 val response = getGeoLocations(newdata)
                 parseResponse(response)
             } catch (e: Exception) {
@@ -102,7 +115,9 @@ class StatsViewModel : ViewModel() {
     }
 
 
-
+    /**
+     * Fetches information about the location of every IP address captured through an external API
+     */
     private fun getGeoLocations(newdata: ArrayList<PacketInfo>): String {
         val url = URL("http://ip-api.com/batch")
         val connection = url.openConnection() as HttpURLConnection
@@ -136,6 +151,9 @@ class StatsViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Process the response from geolocation API
+     */
     private fun parseResponse(response: String) {
         val jsonArray = JSONArray(response)
         val currentMap = ipCountryMap.value?.toMutableMap() ?: return

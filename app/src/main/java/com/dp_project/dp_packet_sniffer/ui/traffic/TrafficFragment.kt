@@ -76,6 +76,7 @@ class TrafficFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Display raw packet data
         val packetData = (activity as MainActivity).packetData
         packetData.sortBy { it.timestamp }
         listView.adapter = PacketListAdapter(requireContext(), packetData)
@@ -87,9 +88,5 @@ class TrafficFragment : Fragment() {
         _binding = null
     }
 
-    fun sortData(view: View)
-    {
-
-    }
 }
 

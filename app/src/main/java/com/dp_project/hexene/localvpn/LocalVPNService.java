@@ -157,7 +157,6 @@ public class LocalVPNService extends VpnService
                 executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
                         deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
                 LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
-                Log.i(TAG, "Started");
             }
             catch (IOException e)
             {
@@ -293,22 +292,20 @@ public class LocalVPNService extends VpnService
                         bufferToNetwork.flip();
                         Packet packet = new Packet(bufferToNetwork);
 
-                        Log.d("Packet sent!", String.valueOf(packet.ip4Header.destinationAddress));
-
-                        // TODO Save packet info
-                        String appName = "Unknown";
+                        // Process packet data into PacketInfo object
                         String packageName = "Unknown";
                         String destIP = null;
                         ApplicationInfo appInfo = null;
+
+                        // Attempt to fetch the application UID based on the destination IP and port
                         if (packet.isTCP() || packet.isUDP()) {
                             destIP = packet.ip4Header.destinationAddress.toString();
                             int destPort = packet.isTCP() ? packet.tcpHeader.destinationPort : packet.udpHeader.destinationPort;
 
-// Get UID of the connection owner
-                            int uid = getConnectionOwnerUid(packet, destIP, destPort);
+                            // Get UID of the connection owner
+                            int uid = getConnectionOwnerUid(packet, destPort);
 
-// Get app info from UID
-
+                            // Get app info from UID
                             if (uid != -1) {
                                 PackageManager pm = getInstance().getPackageManager();
                                 String[] packages = pm.getPackagesForUid(uid);
@@ -320,26 +317,24 @@ public class LocalVPNService extends VpnService
                                     }
                                 }
                             }
-
-// Now create the PacketInfo
-
                         }
+                        // Create the PacketInfo (with applicationInfo if an application was successfuly matched)
                         PacketInfo packetInfo = new PacketInfo(new Date(), protocol, destIP, packet.ip4Header.totalLength, appInfo);
                         if (packet.isUDP()) {
                             if (packet.udpHeader != null) {
                                 packetInfo.protocol = getInstance().getProtocol(packet.udpHeader.destinationPort);
                                 getInstance().packetInfoMap.add(packetInfo);
                             }
+                            // Forward the packet to destination
                             deviceToNetworkUDPQueue.offer(packet);
                         } else if (packet.isTCP()) {
                             if (packet.tcpHeader != null) {
                                 packetInfo.protocol = getInstance().getProtocol(packet.tcpHeader.destinationPort);
                                 getInstance().packetInfoMap.add(packetInfo);
                             }
+                            // Forward the packet to destination
                             deviceToNetworkTCPQueue.offer(packet);
                         } else {
-                            Log.w(TAG, "Unknown packet type");
-                            Log.w(TAG, packet.ip4Header.toString());
                             dataSent = false;
                         }
                     }
@@ -378,13 +373,12 @@ public class LocalVPNService extends VpnService
             {
                 Log.w(TAG, e.toString(), e);
             }
-            finally
-            {
-//                closeResources(vpnInput, vpnOutput);
-            }
         }
 
-        private int getConnectionOwnerUid(Packet packet, String destIP, int destPort) {
+        /**
+         * Attempts to fetch UID of an app that owns the connection defined by destination IP and Port
+         */
+        private int getConnectionOwnerUid(Packet packet, int destPort) {
             try {
                 ConnectivityManager connectivityManager = (ConnectivityManager) getInstance().getSystemService(Context.CONNECTIVITY_SERVICE);
                 if (connectivityManager == null) {
@@ -404,9 +398,11 @@ public class LocalVPNService extends VpnService
             }
         }
 
-
     }
 
+    /**
+     * Return a string representing the protocol used based on port
+     */
     private String getProtocol(int port)
     {
         switch (port) {
@@ -447,7 +443,5 @@ public class LocalVPNService extends VpnService
         }
 
     }
-
-
 
 }

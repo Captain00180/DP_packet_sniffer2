@@ -25,6 +25,7 @@ class AppRiskListAdapter(
 
         val currentItem = items[position]
 
+        // Display the scanned apps and their warnings
         val appInfo: ApplicationInfo = context.packageManager.getApplicationInfo(currentItem.key, 0)
         val appLabel = context.packageManager.getApplicationLabel(appInfo).toString()
         val appIcon = context.packageManager.getApplicationIcon(appInfo)

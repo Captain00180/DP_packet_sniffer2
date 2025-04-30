@@ -25,6 +25,7 @@ class IPCountryListAdapter(
 
         val currentItem = dataList[position]
 
+        // Display the information about IP addresses in a list
         val ipTextView = itemView.findViewById<TextView>(R.id.ipTextView)
         val countryTextView = itemView.findViewById<TextView>(R.id.countryTextView)
         val countTextView = itemView.findViewById<TextView>(R.id.countTextView)
