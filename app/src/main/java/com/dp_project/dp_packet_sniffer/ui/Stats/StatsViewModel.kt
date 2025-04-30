@@ -49,8 +49,7 @@ class StatsViewModel : ViewModel() {
     /**
      * Process packet data after scanning is completed and prepare the pieEntry entities
      */
-    fun updatePieChart(newData: ArrayList<PacketInfo>)
-    {
+    fun updatePieChart(newData: ArrayList<PacketInfo>) {
         val protocolCounts = HashMap<String, Int>()
         for (packetInfo in newData) {
             val protocol = packetInfo.protocol
@@ -74,9 +73,12 @@ class StatsViewModel : ViewModel() {
     fun updateIPList(newdata: ArrayList<PacketInfo>) {
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                val ipAppCounts = mutableMapOf<String, MutableMap<String, Int>>()    // IP -> (AppName -> Count)
-                val ipProtocolCounts = mutableMapOf<String, MutableMap<String, Int>>() // IP -> (Protocol -> Count)
-                val ipTotalCounts = mutableMapOf<String, Int>()                        // IP -> Total packet count
+                val ipAppCounts =
+                    mutableMapOf<String, MutableMap<String, Int>>()    // IP -> (AppName -> Count)
+                val ipProtocolCounts =
+                    mutableMapOf<String, MutableMap<String, Int>>() // IP -> (Protocol -> Count)
+                val ipTotalCounts =
+                    mutableMapOf<String, Int>()                        // IP -> Total packet count
 
                 for (item in newdata) {
                     val ipAddress = item.destinationIP.substring(1)
@@ -98,7 +100,8 @@ class StatsViewModel : ViewModel() {
                 val finalMap = mutableMapOf<String, IpInfoData>()
                 for ((ip, count) in ipTotalCounts) {
                     val topApp = ipAppCounts[ip]?.maxByOrNull { it.value }?.key ?: "Unknown"
-                    val topProtocol = ipProtocolCounts[ip]?.maxByOrNull { it.value }?.key ?: "Unknown"
+                    val topProtocol =
+                        ipProtocolCounts[ip]?.maxByOrNull { it.value }?.key ?: "Unknown"
                     finalMap[ip] = IpInfoData(topApp, topProtocol, count)
                 }
 

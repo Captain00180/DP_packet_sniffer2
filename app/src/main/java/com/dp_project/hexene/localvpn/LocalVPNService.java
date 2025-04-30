@@ -1,46 +1,45 @@
 /*
-** Copyright 2015, Mohamed Naufal
-**
-** Licensed under the Apache License, Version 2.0 (the "License");
-** you may not use this file except in compliance with the License.
-** You may obtain a copy of the License at
-**
-**     http://www.apache.org/licenses/LICENSE-2.0
-**
-** Unless required by applicable law or agreed to in writing, software
-** distributed under the License is distributed on an "AS IS" BASIS,
-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-** See the License for the specific language governing permissions and
-** limitations under the License.
-*/
+ ** Copyright 2015, Mohamed Naufal
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+ ** You may obtain a copy of the License at
+ **
+ **     http://www.apache.org/licenses/LICENSE-2.0
+ **
+ ** Unless required by applicable law or agreed to in writing, software
+ ** distributed under the License is distributed on an "AS IS" BASIS,
+ ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ** See the License for the specific language governing permissions and
+ ** limitations under the License.
+ */
 
 package com.dp_project.hexene.localvpn;
 
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
 import android.net.VpnService;
+import android.os.Binder;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
-
-import android.content.pm.ApplicationInfo;
-import android.net.ConnectivityManager;
 import android.system.OsConstants;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import android.util.Log;
-import android.os.Binder;
+
+import com.dp_project.dp_packet_sniffer.R;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Selector;
@@ -50,33 +49,178 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.dp_project.dp_packet_sniffer.R;
-
-public class LocalVPNService extends VpnService
-{
+public class LocalVPNService extends VpnService {
+    public static final String BROADCAST_VPN_STATE = "xyz.hexene.localvpn.VPN_STATE";
     private static final String TAG = LocalVPNService.class.getSimpleName();
     private static final String VPN_ADDRESS = "10.0.0.2"; // Only IPv4 support for now
     private static final String VPN_ROUTE = "0.0.0.0"; // Intercept everything
-
-    public static final String BROADCAST_VPN_STATE = "xyz.hexene.localvpn.VPN_STATE";
-
-    private ArrayList<PacketInfo> packetInfoMap = new ArrayList<>();
-
     private static boolean isRunning = false;
-
-    private ParcelFileDescriptor vpnInterface = null;
-
-    private PendingIntent pendingIntent;
-
     private static LocalVPNService instance;
-
+    private final ArrayList<PacketInfo> packetInfoMap = new ArrayList<>();
+    private final IBinder binder = new LocalBinder();
+    private ParcelFileDescriptor vpnInterface = null;
+    private PendingIntent pendingIntent;
     private ConcurrentLinkedQueue<Packet> deviceToNetworkUDPQueue;
     private ConcurrentLinkedQueue<Packet> deviceToNetworkTCPQueue;
     private ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue;
     private ExecutorService executorService;
-
     private Selector udpSelector;
     private Selector tcpSelector;
+
+    public static boolean isRunning() {
+        return isRunning;
+    }
+
+    public static void setRunning(boolean value) {
+        isRunning = value;
+    }
+
+    public static LocalVPNService getInstance() {
+        return instance;
+    }
+
+    // TODO: Move this to a "utils" class for reuse
+    private static void closeResources(Closeable... resources) {
+        for (Closeable resource : resources) {
+            try {
+                resource.close();
+            } catch (IOException e) {
+                // Ignore
+            }
+        }
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        instance = this;
+        isRunning = true;
+
+    }
+
+    private void setupVPN(ArrayList<String> allowedApplications) {
+        if (vpnInterface == null) {
+            Builder builder = new Builder();
+            builder.addAddress(VPN_ADDRESS, 32);
+            builder.addRoute(VPN_ROUTE, 0);
+            try {
+                builder.addAllowedApplication(getPackageName());
+            } catch (PackageManager.NameNotFoundException ignore) {
+            }
+            for (String allowedApplication : allowedApplications) {
+                try {
+                    builder.addAllowedApplication(allowedApplication);
+                } catch (PackageManager.NameNotFoundException ignore) {
+                }
+            }
+            vpnInterface = builder.setSession(getString(R.string.app_name)).setConfigureIntent(pendingIntent).establish();
+
+            try {
+                udpSelector = Selector.open();
+                tcpSelector = Selector.open();
+                deviceToNetworkUDPQueue = new ConcurrentLinkedQueue<>();
+                deviceToNetworkTCPQueue = new ConcurrentLinkedQueue<>();
+                networkToDeviceQueue = new ConcurrentLinkedQueue<>();
+
+                executorService = Executors.newFixedThreadPool(5);
+                executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
+                executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
+                executorService.submit(new TCPInput(networkToDeviceQueue, tcpSelector));
+                executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, this));
+                executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
+                        deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
+                LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
+            } catch (IOException e) {
+                // TODO: Here and elsewhere, we should explicitly notify the user of any errors
+                // and suggest that they stop the service, since we can't do it ourselves
+                Log.e(TAG, "Error starting service", e);
+                cleanup();
+            }
+        }
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        ArrayList<String> allowedApplications = intent != null ? intent.getStringArrayListExtra("allowedApplications") : null;
+        if (allowedApplications != null) {
+            // Call setupVPN and pass the list of allowed applications
+            setupVPN(allowedApplications);
+        }
+        return START_STICKY;
+    }
+
+    public ArrayList<PacketInfo> stopVPNService() {
+        ArrayList<PacketInfo> temp = this.packetInfoMap;
+        onDestroy();
+        return temp;
+    }
+
+    @Override
+    public void onDestroy() {
+        isRunning = false;
+        executorService.shutdownNow();
+        cleanup();
+        Log.i(TAG, "Stopped");
+        super.onDestroy();
+
+    }
+
+    private void cleanup() {
+        deviceToNetworkTCPQueue = null;
+        deviceToNetworkUDPQueue = null;
+        networkToDeviceQueue = null;
+        ByteBufferPool.clear();
+        closeResources(udpSelector, tcpSelector, vpnInterface);
+    }
+
+    /**
+     * Return a string representing the protocol used based on port
+     */
+    private String getProtocol(int port) {
+        switch (port) {
+            case 80:
+                return "HTTP(80)";
+            case 443:
+                return "HTTPS(443)";
+            case 53:
+                return "DNS(53)";
+            case 5228:
+                return "Google Services(5228)";
+            case 5229:
+                return "Google Services(5229)";
+            case 5230:
+                return "Google Services(5230)";
+            case 5222:
+                return "XMPP/Jabber(5222)";
+            case 1883:
+                return "MQTT(1883)";
+            case 8883:
+                return "MQTTS(8883)";
+            case 8080:
+                return "HTTP-Alt(8080)";
+            case 8443:
+                return "HTTPS-Alt(8443)";
+            case 1900:
+                return "SSDP(1900)";
+            case 5353:
+                return "mDNS(5353)";
+            case 123:
+                return "NTP(123)";
+            case 500:
+                return "IKE/IPSec(500)";
+            case 4500:
+                return "NAT-T/IPSec(4500)";
+            default:
+                return "Other";
+        }
+
+    }
 
     public static class PacketInfo {
         public Date timestamp;
@@ -95,164 +239,20 @@ public class LocalVPNService extends VpnService
         }
     }
 
-
-    public class LocalBinder extends Binder {
-        public LocalVPNService getService() {
-            return LocalVPNService.this;
-        }
-    }
-
-    private final IBinder binder = new LocalBinder();
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return binder;
-    }
-
-
-    @Override
-    public void onCreate()
-    {
-        super.onCreate();
-        instance = this;
-        isRunning = true;
-
-    }
-
-    private void setupVPN(ArrayList<String> allowedApplications)
-    {
-        if (vpnInterface == null)
-        {
-            Builder builder = new Builder();
-            builder.addAddress(VPN_ADDRESS, 32);
-            builder.addRoute(VPN_ROUTE, 0);
-            try {
-            builder.addAllowedApplication(getPackageName());
-            } catch(PackageManager.NameNotFoundException ignore)
-            {
-            }
-            for (String allowedApplication : allowedApplications) {
-                try {
-                    builder.addAllowedApplication(allowedApplication);
-                } catch(PackageManager.NameNotFoundException ignore)
-                {
-                }
-            }
-            vpnInterface = builder.setSession(getString(R.string.app_name)).setConfigureIntent(pendingIntent).establish();
-
-            try
-            {
-                udpSelector = Selector.open();
-                tcpSelector = Selector.open();
-                deviceToNetworkUDPQueue = new ConcurrentLinkedQueue<>();
-                deviceToNetworkTCPQueue = new ConcurrentLinkedQueue<>();
-                networkToDeviceQueue = new ConcurrentLinkedQueue<>();
-
-                executorService = Executors.newFixedThreadPool(5);
-                executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
-                executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
-                executorService.submit(new TCPInput(networkToDeviceQueue, tcpSelector));
-                executorService.submit(new TCPOutput(deviceToNetworkTCPQueue, networkToDeviceQueue, tcpSelector, this));
-                executorService.submit(new VPNRunnable(vpnInterface.getFileDescriptor(),
-                        deviceToNetworkUDPQueue, deviceToNetworkTCPQueue, networkToDeviceQueue));
-                LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
-            }
-            catch (IOException e)
-            {
-                // TODO: Here and elsewhere, we should explicitly notify the user of any errors
-                // and suggest that they stop the service, since we can't do it ourselves
-                Log.e(TAG, "Error starting service", e);
-                cleanup();
-            }
-        }
-    }
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        ArrayList<String> allowedApplications = intent != null ? intent.getStringArrayListExtra("allowedApplications") : null;
-        if (allowedApplications != null) {
-            // Call setupVPN and pass the list of allowed applications
-            setupVPN(allowedApplications);
-        }
-        return START_STICKY;
-    }
-
-    public static boolean isRunning()
-    {
-        return isRunning;
-    }
-
-    public static void setRunning(boolean value)
-    {
-        isRunning = value;
-    }
-
-
-    public static LocalVPNService getInstance()
-    {
-        return instance;
-    }
-
-
-    public ArrayList<PacketInfo> stopVPNService()
-    {
-        ArrayList<PacketInfo> temp = this.packetInfoMap;
-        onDestroy();
-        return temp;
-    }
-
-    @Override
-    public void onDestroy()
-    {
-        isRunning = false;
-        executorService.shutdownNow();
-        cleanup();
-        Log.i(TAG, "Stopped");
-        super.onDestroy();
-
-    }
-
-    private void cleanup()
-    {
-        deviceToNetworkTCPQueue = null;
-        deviceToNetworkUDPQueue = null;
-        networkToDeviceQueue = null;
-        ByteBufferPool.clear();
-        closeResources(udpSelector, tcpSelector, vpnInterface);
-    }
-
-    // TODO: Move this to a "utils" class for reuse
-    private static void closeResources(Closeable... resources)
-    {
-        for (Closeable resource : resources)
-        {
-            try
-            {
-                resource.close();
-            }
-            catch (IOException e)
-            {
-                // Ignore
-            }
-        }
-    }
-
-    private static class VPNRunnable implements Runnable
-    {
+    private static class VPNRunnable implements Runnable {
         private static final String TAG = VPNRunnable.class.getSimpleName();
 
-        private FileDescriptor vpnFileDescriptor;
+        private final FileDescriptor vpnFileDescriptor;
 
-        private ConcurrentLinkedQueue<Packet> deviceToNetworkUDPQueue;
-        private ConcurrentLinkedQueue<Packet> deviceToNetworkTCPQueue;
-        private ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue;
+        private final ConcurrentLinkedQueue<Packet> deviceToNetworkUDPQueue;
+        private final ConcurrentLinkedQueue<Packet> deviceToNetworkTCPQueue;
+        private final ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue;
 
 
         public VPNRunnable(FileDescriptor vpnFileDescriptor,
                            ConcurrentLinkedQueue<Packet> deviceToNetworkUDPQueue,
                            ConcurrentLinkedQueue<Packet> deviceToNetworkTCPQueue,
-                           ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue)
-        {
+                           ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue) {
             this.vpnFileDescriptor = vpnFileDescriptor;
             this.deviceToNetworkUDPQueue = deviceToNetworkUDPQueue;
             this.deviceToNetworkTCPQueue = deviceToNetworkTCPQueue;
@@ -260,21 +260,18 @@ public class LocalVPNService extends VpnService
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             Log.i(TAG, "Started");
 
             FileChannel vpnInput = new FileInputStream(vpnFileDescriptor).getChannel();
             FileChannel vpnOutput = new FileOutputStream(vpnFileDescriptor).getChannel();
 
-            try
-            {
+            try {
                 ByteBuffer bufferToNetwork = null;
                 boolean dataSent = true;
                 boolean dataReceived;
                 String protocol = "null";
-                while (!Thread.interrupted())
-                {
+                while (!Thread.interrupted()) {
 //                    if(!isRunning)
 //                    {
 //                        Thread.sleep(10);
@@ -337,15 +334,12 @@ public class LocalVPNService extends VpnService
                         } else {
                             dataSent = false;
                         }
-                    }
-                    else
-                    {
+                    } else {
                         dataSent = false;
                     }
 
                     ByteBuffer bufferFromNetwork = networkToDeviceQueue.poll();
-                    if (bufferFromNetwork != null)
-                    {
+                    if (bufferFromNetwork != null) {
                         bufferFromNetwork.flip();
                         while (bufferFromNetwork.hasRemaining())
                             vpnOutput.write(bufferFromNetwork);
@@ -353,9 +347,7 @@ public class LocalVPNService extends VpnService
 
                         ByteBufferPool.release(bufferFromNetwork);
 
-                    }
-                    else
-                    {
+                    } else {
                         dataReceived = false;
                     }
 
@@ -364,13 +356,9 @@ public class LocalVPNService extends VpnService
                     if (!dataSent && !dataReceived)
                         Thread.sleep(10);
                 }
-            }
-            catch (InterruptedException e)
-            {
+            } catch (InterruptedException e) {
                 Log.i(TAG, "Stopping");
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Log.w(TAG, e.toString(), e);
             }
         }
@@ -400,48 +388,10 @@ public class LocalVPNService extends VpnService
 
     }
 
-    /**
-     * Return a string representing the protocol used based on port
-     */
-    private String getProtocol(int port)
-    {
-        switch (port) {
-            case 80:
-                return "HTTP(80)";
-            case 443:
-                return "HTTPS(443)";
-            case 53:
-                return "DNS(53)";
-            case 5228:
-                return "Google Services(5228)";
-            case 5229:
-                return "Google Services(5229)";
-            case 5230:
-                return "Google Services(5230)";
-            case 5222:
-                return "XMPP/Jabber(5222)";
-            case 1883:
-                return "MQTT(1883)";
-            case 8883:
-                return "MQTTS(8883)";
-            case 8080:
-                return "HTTP-Alt(8080)";
-            case 8443:
-                return "HTTPS-Alt(8443)";
-            case 1900:
-                return "SSDP(1900)";
-            case 5353:
-                return "mDNS(5353)";
-            case 123:
-                return "NTP(123)";
-            case 500:
-                return "IKE/IPSec(500)";
-            case 4500:
-                return "NAT-T/IPSec(4500)";
-            default:
-                return "Other";
+    public class LocalBinder extends Binder {
+        public LocalVPNService getService() {
+            return LocalVPNService.this;
         }
-
     }
 
 }

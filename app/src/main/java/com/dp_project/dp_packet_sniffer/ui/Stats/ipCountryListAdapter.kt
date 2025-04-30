@@ -21,7 +21,8 @@ class IPCountryListAdapter(
     }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val itemView = convertView ?: LayoutInflater.from(context).inflate(R.layout.ip_list_item, parent, false)
+        val itemView = convertView ?: LayoutInflater.from(context)
+            .inflate(R.layout.ip_list_item, parent, false)
 
         val currentItem = dataList[position]
 
@@ -42,7 +43,7 @@ class IPCountryListAdapter(
         } catch (e: PackageManager.NameNotFoundException) {
             topAppTextView.text = "Unknown"
         }
-        topProtocolTextView.text = currentItem.second.topProtocol;
+        topProtocolTextView.text = currentItem.second.topProtocol
 
         return itemView
     }

@@ -1,6 +1,5 @@
 package com.dp_packet_sniffer.ui.Stats
 
-import com.dp_project.dp_packet_sniffer.ui.Stats.IPCountryListAdapter
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,6 +10,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.dp_project.dp_packet_sniffer.R
 import com.dp_project.dp_packet_sniffer.databinding.FragmentStatsBinding
+import com.dp_project.dp_packet_sniffer.ui.Stats.IPCountryListAdapter
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -44,7 +44,7 @@ class StatsFragment : Fragment() {
         pieChart.setCenterTextSize(24f)
         pieChart.minAngleForSlices = 30f
 
-        pieChart.invalidate();
+        pieChart.invalidate()
 
         val root: View = binding.root
 
@@ -55,8 +55,7 @@ class StatsFragment : Fragment() {
      * Create a pie chart of used protocols and their counts
      * newData - processed PieEntry list
      */
-    private fun updatePieChart(newData: List<PieEntry>)
-    {
+    private fun updatePieChart(newData: List<PieEntry>) {
         val pieChart = requireView().findViewById<PieChart>(R.id.pieChart)
         val dataset = PieDataSet(newData, "")
         dataset.valueFormatter = DefaultValueFormatter(0)
@@ -68,9 +67,9 @@ class StatsFragment : Fragment() {
         colors.add(Color.parseColor("#a35567"))
         colors.add(Color.parseColor("#ff5f67"))
         colors.add(Color.parseColor("#3ca567"))
-        dataset.setColors(colors)
+        dataset.colors = colors
         val data = PieData(dataset)
-        data.setValueTextSize(12f);
+        data.setValueTextSize(12f)
         pieChart.data = data
         pieChart.description.isEnabled = false
         pieChart.legend.isEnabled = false
@@ -94,7 +93,9 @@ class StatsFragment : Fragment() {
 
         // Update the IP list when ViewModel data changes
         sharedViewModel.ipCountryMap.observe(viewLifecycleOwner, Observer { map ->
-            ipCountryListAdapter = IPCountryListAdapter(requireContext(), map.toList().sortedByDescending { it.second.count })
+            ipCountryListAdapter = IPCountryListAdapter(
+                requireContext(),
+                map.toList().sortedByDescending { it.second.count })
             binding.ipListView.adapter = ipCountryListAdapter
             ipCountryListAdapter.updateData(map.toList().sortedByDescending { it.second.count })
         })
