@@ -184,6 +184,10 @@ public class LocalVPNService extends VpnService {
      */
     private String getProtocol(int port) {
         switch (port) {
+            case 22:
+                return "SSH(22)";
+            case 25:
+                return "SMTP(25)";
             case 80:
                 return "HTTP(80)";
             case 443:

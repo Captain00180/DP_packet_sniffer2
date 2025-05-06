@@ -281,7 +281,19 @@ class MainActivity : AppCompatActivity() {
                 topApp != null && secondApp != null && topApp.value >= 3 * secondApp.value && topApp.key == packageName
 
             val total = packets.size
-            val unencryptedCount = packets.count { it.protocol == "HTTP(80)" }
+            val unencryptedProtocols = setOf(
+                "SMTP(25)",
+                "HTTP(80)",
+                "DNS(53)",
+                "XMPP/Jabber(5222)",
+                "MQTT(1883)",
+                "HTTP-Alt(8080)",
+                "SSDP(1900)",
+                "mDNS(5353)",
+                "NTP(123)"
+            )
+
+            val unencryptedCount = packets.count { it.protocol in unencryptedProtocols }
             val otherProtocolCount = packets.count { it.protocol == "Other" }
 
             val unencryptedRatio = unencryptedCount.toDouble() / total
