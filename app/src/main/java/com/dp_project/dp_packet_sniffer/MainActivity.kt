@@ -35,6 +35,15 @@ import com.dp_project.dp_packet_sniffer.databinding.ActivityMainBinding
 import com.dp_project.hexene.localvpn.LocalVPNService
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
+/**
+ * Represents an application entry with a selectable checkbox state.
+ * Used to handle the selection process of apps before monitoring starts.
+ *
+ * @property applicationInfo Metadata about the installed application, such as package name,
+ * icon, and other system-level details provided by the Android system.
+ * @property isChecked Indicates whether the app is selected for monitoring.
+ * Defaults to `false`.
+ */
 data class AppInfoCheckbox(
     val applicationInfo: ApplicationInfo,
     var isChecked: Boolean = false
@@ -42,20 +51,28 @@ data class AppInfoCheckbox(
 
 class MainActivity : AppCompatActivity() {
 
+    /** View binding for activity_main.xml layout */
     private lateinit var binding: ActivityMainBinding
 
-    private val vpnInitialized = false
+    /** Request code used to identify VPN permission result */
+    private val VPN_REQUEST_CODE: Int = 0x0F
 
-    private val VPN_REQUEST_CODE = 0x0F
+    /** Tracks whether the app is waiting for the VPN to start */
+    private var waitingForVPNStart: Boolean = false
 
-    private var waitingForVPNStart = false
-
+    /** Holds the VPN service launch intent, or null if not started */
     private var vpnIntent: Intent? = null
 
+    /** Reference to the running VPN service instance, or null if not bound */
     private var vpnService: LocalVPNService? = null
 
-    private var vpnServiceBound = false
+    /** Indicates whether the VPN service is currently bound */
+    private var vpnServiceBound: Boolean = false
 
+    /**
+     * Broadcast receiver that listens for VPN state updates.
+     * Updates `waitingForVPNStart` flag based on whether the VPN is running.
+     */
     private val vpnStateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (LocalVPNService.BROADCAST_VPN_STATE == intent.action) {
@@ -63,7 +80,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
+    /**
+     * Handles service binding and unbinding for the VPN service.
+     * Stores the reference to the running VPN service upon connection.
+     */
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as LocalVPNService.LocalBinder
@@ -76,30 +96,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Stats view-model reference
+    /** Stats view-model reference */
     private lateinit var statsViewModel: StatsViewModel
 
-    // Packet data ready for analysis. VPN service saves outgoing packets into this array
+    /** Packet data ready for analysis. VPN service saves outgoing packets into this array */
     lateinit var packetData: ArrayList<LocalVPNService.PacketInfo>
 
-    // List of warning indicators for individual apps
-    // <<packageName>, <warning_flags>>
+    /** List of warning indicators for individual apps
+    * <<packageName>, <warning_flags>>
+    */
     var appWarnings: MutableMap<String, List<Boolean>> = mutableMapOf()
 
-    // List of all installed appliations
+    /** List of all installed applications */
     val allApps = mutableListOf<AppInfoCheckbox>()
 
-
+    /**
+     * Initializes the activity, sets up view binding, configures the UI, and prepares the bottom navigation bar.
+     * Also fetches and displays a list of installed apps, initializes the stats ViewModel, and registers for VPN state updates.
+     *
+     * @param savedInstanceState The previously saved instance state, if available.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize the view
         binding = ActivityMainBinding.inflate(layoutInflater)
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         setContentView(binding.root)
 
+        // Set up bottom navigation
         val navView: BottomNavigationView = binding.navView
-
-        // App list
         val listView: ListView = findViewById(R.id.applist)
 
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
@@ -152,7 +178,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Fetches all installed apps from the packageManager
+     * Fetches all installed apps from the packageManager. Fills the `allApps`
      */
     fun getallapps() {
         val infos =
@@ -166,12 +192,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Starts the VPN service
+     * Prepares and starts the VPN service. Requests VPN permission if needed, then proceeds to bind the service.
      */
     private fun startVPN() {
-        if (vpnInitialized) {
-            return
-        }
         val localVpnIntent = VpnService.prepare(this)
         if (localVpnIntent != null) startActivityForResult(
             localVpnIntent,
@@ -179,6 +202,13 @@ class MainActivity : AppCompatActivity() {
         ) else onActivityResult(VPN_REQUEST_CODE, RESULT_OK, null)
     }
 
+    /**
+     * Handles the result of the VPN permission request. If granted, starts the VPN service and binds it.
+     *
+     * @param requestCode The request code passed in `startActivityForResult` (VPN_REQUEST_CODE)
+     * @param resultCode The result code returned by the activity (RESULT_OK)
+     * @param data Any additional data returned by the activity (in this instance always null)
+     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == VPN_REQUEST_CODE && resultCode == RESULT_OK) {
@@ -221,10 +251,6 @@ class MainActivity : AppCompatActivity() {
                 view,
                 ColorStateList.valueOf(Color.parseColor("#27FEB3"))
             )
-
-            checkBox.visibility = View.GONE
-            appList.visibility = View.GONE
-            view.visibility = View.GONE
 
             // Re-enable navigation
             val navView: BottomNavigationView = binding.navView
